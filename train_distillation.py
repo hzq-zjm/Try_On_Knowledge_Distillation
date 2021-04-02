@@ -35,15 +35,13 @@ if __name__ == '__main__':
       criterion = torch.nn.CrossEntropyLoss()
       criterion_distill = torch.nn.KLDivLoss()
       S_model = mobilenetv1(num_classes=opt.num_classes)
-
       T_model  = resnet34(pretrained=False)
-      for param in T_model.parameters():
-            param.requires_grad = False
       fc_inputs = T_model.fc.in_features
       T_model.fc = torch.nn.Linear(fc_inputs, 2)
       #下面加载（在自己数据集上训练好的）教师模型
       T_model.load_state_dict(torch.load('./checkpoints/resnet34_Teacher_20_0.9990.pth'),strict=False)  
-
+      for param in T_model.parameters(): #固定参数不更新
+            param.requires_grad = False
       T_model.cuda()
       S_model.cuda()
       cudnn.benchmark = True
@@ -71,7 +69,8 @@ if __name__ == '__main__':
 
 
 
-      
+      #optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, T_model.parameters()), lr= lr=opt.lr)
+        
       if opt.optimizer == 'sgd':
             optimizer = torch.optim.SGD([{'params':S_model.parameters()}],momentum =opt.momentum,
                                           lr=opt.lr, weight_decay=opt.weight_decay)
